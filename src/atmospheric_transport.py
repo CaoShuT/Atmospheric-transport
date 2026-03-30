@@ -7,6 +7,11 @@
 import numpy as np
 from scipy.signal import fftconvolve
 
+# 数值常量
+_G_EPSILON = 1e-12          # 不对称因子接近零的阈值
+_MIN_RANDOM_VALUE = 1e-30   # 避免 log(0) 的随机数下限
+_DZ_THRESHOLD = 0.99999     # 方向向量 z 分量退化阈值
+
 
 # ────────────────────────────────────────────────────────────────────
 # 1. 消光系数模型 (Extinction Coefficient Models)
@@ -166,7 +171,7 @@ def _henyey_greenstein_scatter_angle(g: float, rng: np.random.Generator) -> floa
         散射角 θ (rad)。
     """
     xi = rng.random()
-    if abs(g) < 1e-12:
+    if abs(g) < _G_EPSILON:
         cos_theta = 1.0 - 2.0 * xi
     else:
         s = (1.0 - g * g) / (1.0 - g + 2.0 * g * xi)
@@ -234,8 +239,8 @@ def monte_carlo_psf(
         while alive and z < distance_km:
             # 采样自由程
             xi = rng.random()
-            if xi < 1e-30:
-                xi = 1e-30
+            if xi < _MIN_RANDOM_VALUE:
+                xi = _MIN_RANDOM_VALUE
             step = -np.log(xi) / extinction_coeff
 
             # 移动光子
@@ -266,7 +271,7 @@ def monte_carlo_psf(
                 cos_phi = np.cos(phi)
 
                 # 旋转方向向量
-                if abs(dz) > 0.99999:
+                if abs(dz) > _DZ_THRESHOLD:
                     new_dx = sin_theta * cos_phi
                     new_dy = sin_theta * sin_phi
                     new_dz = cos_theta * np.sign(dz)

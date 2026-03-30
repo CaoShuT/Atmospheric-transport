@@ -10,6 +10,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
+_LOG_SCALE_MIN = 1e-10   # 对数色标最小值
+_LOG_PLOT_FLOOR = 1e-30  # 三维图对数变换下限
+
 
 def plot_psf_2d(
     psf: np.ndarray,
@@ -40,7 +43,7 @@ def plot_psf_2d(
     psf_display = psf.copy()
     if log_scale:
         psf_display = np.where(psf_display > 0, psf_display, np.nan)
-        vmin = np.nanmin(psf_display[psf_display > 0]) if np.any(psf_display > 0) else 1e-10
+        vmin = np.nanmin(psf_display[psf_display > 0]) if np.any(psf_display > 0) else _LOG_SCALE_MIN
         im = ax.imshow(psf_display, cmap="hot", norm=LogNorm(vmin=vmin))
     else:
         im = ax.imshow(psf_display, cmap="hot")
@@ -136,7 +139,7 @@ def plot_psf_3d(
     y = np.arange(h)
     X, Y = np.meshgrid(x, y)
 
-    psf_log = np.log10(np.where(psf > 0, psf, 1e-30))
+    psf_log = np.log10(np.where(psf > 0, psf, _LOG_PLOT_FLOOR))
 
     ax.plot_surface(X, Y, psf_log, cmap="hot", linewidth=0, antialiased=True)
     ax.set_title(title, fontsize=14)
